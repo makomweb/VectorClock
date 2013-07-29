@@ -5,56 +5,43 @@ namespace VectorClock
 {
     public class VectorClock
     {
-        private readonly Dictionary<string, int> _items;
-
         private const int DefaultValue = 0;
 
         public VectorClock()
         {
-            _items = new Dictionary<string, int>();
+            Map = new Dictionary<string, int>();
         }
 
-        private VectorClock(VectorClock other) : this(other._items) {}
+        public VectorClock(VectorClock other) : this(other.Map) {}
 
         private VectorClock(Dictionary<string, int> dictionary)
         {
-            _items = dictionary.ToDictionary(e => e.Key, e => e.Value);;
+            Map = dictionary.ToDictionary(e => e.Key, e => e.Value);
         }
+
+        public Dictionary<string, int> Map { get; private set; }
 
         public void Tick(string key)
         {
-            if (_items.ContainsKey(key))
-                _items[key] = _items[key] + 1;
+            if (Map.ContainsKey(key))
+                Map[key] = Map[key] + 1;
             else
-                _items.Add(key, 1); // starts at 0, +1
+                Map.Add(key, 1); // starts at 0, +1
         }
 
         public string[] Keys
         {
-            get { return _items.Keys.ToArray(); }
-        }
-
-        private int[] Values
-        {
-            get { return _items.Values.ToArray(); }
+            get { return Map.Keys.ToArray(); }
         }
 
         public int GetValue(string key)
         {
-            return _items.ContainsKey(key) ? _items[key] : DefaultValue;
+            return Map.ContainsKey(key) ? Map[key] : DefaultValue;
         }
 
         public bool Contains(string key)
         {
-            return _items.ContainsKey(key);
-        }
-
-        private void Put(string key, int value)
-        {
-            if (!_items.ContainsKey(key))
-                _items.Add(key, value);
-            else
-                _items[key] = value;
+            return Map.ContainsKey(key);
         }
 
         private bool IsDefaultValue(string key)
@@ -62,18 +49,25 @@ namespace VectorClock
             return GetValue(key) == DefaultValue;
         }
 
-        public static VectorClock Merge(VectorClock one, VectorClock other)
+        public void Merge(VectorClock other)
         {
-            var result = new VectorClock(one);
-
+            var temp = new VectorClock(Map);
+            
             foreach (var k in other.Keys)
             {
-                if (!result.Contains(k) || result.GetValue(k) < other.GetValue(k))
+                if (!temp.Contains(k) || temp.GetValue(k) < other.GetValue(k))
                 {
-                    result.Put(k, other.GetValue(k));
+                    temp.Put(k, other.GetValue(k));
                 }
             }
 
+            Map = temp.Map;
+        }
+
+        public static VectorClock Merge(VectorClock one, VectorClock other)
+        {
+            var result = new VectorClock(one);
+            result.Merge(other);
             return result;
         }
 
@@ -135,6 +129,22 @@ namespace VectorClock
                 return VectorComparision.Smaller;
             else
                 return VectorComparision.Simultanous;
+        }
+    }
+
+    public static class VectorClockExtensions
+    {
+        public static void Put(this VectorClock vectorClock, string key, int value)
+        {
+            Put(vectorClock.Map, key, value);    
+        }
+
+        public static void Put(this Dictionary<string, int> map, string key, int value)
+        {
+            if (!map.ContainsKey(key))
+                map.Add(key, value);
+            else
+                map[key] = value;
         }
     }
 }

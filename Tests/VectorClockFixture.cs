@@ -1,5 +1,4 @@
-﻿using System.Security;
-using Xunit;
+﻿using Xunit;
 
 namespace VectorClock.Tests
 {
@@ -10,31 +9,59 @@ namespace VectorClock.Tests
         {
             var one = new VectorClock();
             var other = new VectorClock();
-
-            AssertMergedResultCount(0, one, other);
+           
+            AssertMergedKeyCount(0, one, other);
 
             one.Tick("foo");
             one.Tick("bar");
 
-            AssertMergedResultCount(2, one, other);
+            AssertMergedKeyCount(2, one, other);
 
             other.Tick("foo");
 
-            AssertMergedResultCount(2, one, other);
+            AssertMergedKeyCount(2, one, other);
 
             other.Tick("baz");
 
-            AssertMergedResultCount(3, one, other);
+            AssertMergedKeyCount(3, one, other);
 
             one.Tick("baz");
 
-            AssertMergedResultCount(3, one, other);
+            AssertMergedKeyCount(3, one, other);
         }
 
-        private static void AssertMergedResultCount(int expectedCount, VectorClock one, VectorClock other)
+        [Fact]
+        public void After_merging_there_should_be_3_results()
         {
-            var res = VectorClock.Merge(one, other);
-            Assert.Equal(expectedCount, res.Keys.Length);
+            var one = new VectorClock();
+
+            one.Tick("foo");
+            one.Tick("bar");
+
+            var other = VectorClock.Merge(new VectorClock(), one);
+
+            other.Tick("foo");
+            other.Tick("bar");
+            other.Tick("baz");
+
+            Assert.Equal(3, VectorClock.Merge(one, other).Keys.Length);
+
+            one.Merge(other);
+
+            one.Tick("foo");
+            one.Tick("foobar");
+
+            AssertMergedKeyCount(4, one, other);
+        }
+
+        private static void AssertMergedKeyCount(int expectedCount, VectorClock one, VectorClock other)
+        {
+            var merged = VectorClock.Merge(one, other);
+            Assert.Equal(expectedCount, merged.Keys.Length);
+        }
+
+        private static void AssertTickCount(int expectedTickCount, VectorClock clock)
+        {
         }
     }
 }
