@@ -7,16 +7,16 @@ namespace VectorClock
     {
         private readonly Dictionary<string, int> _items;
 
-        public int DefaultValue = 0;
+        private const int DefaultValue = 0;
 
         public VectorClock()
         {
             _items = new Dictionary<string, int>();
         }
 
-        public VectorClock(VectorClock other) : this(other._items) {}
+        private VectorClock(VectorClock other) : this(other._items) {}
 
-        public VectorClock(Dictionary<string, int> dictionary)
+        private VectorClock(Dictionary<string, int> dictionary)
         {
             _items = dictionary.ToDictionary(e => e.Key, e => e.Value);;
         }
@@ -34,7 +34,7 @@ namespace VectorClock
             get { return _items.Keys.ToArray(); }
         }
 
-        public int[] Values
+        private int[] Values
         {
             get { return _items.Values.ToArray(); }
         }
@@ -49,9 +49,12 @@ namespace VectorClock
             return _items.ContainsKey(key);
         }
 
-        private void Add(string key, int value)
+        private void Put(string key, int value)
         {
-            _items.Add(key, value);
+            if (!_items.ContainsKey(key))
+                _items.Add(key, value);
+            else
+                _items[key] = value;
         }
 
         private bool IsDefaultValue(string key)
@@ -67,7 +70,7 @@ namespace VectorClock
             {
                 if (!result.Contains(k) || result.GetValue(k) < other.GetValue(k))
                 {
-                    result.Add(k, other.GetValue(k));
+                    result.Put(k, other.GetValue(k));
                 }
             }
 
